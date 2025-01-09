@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/voucherOrder")
+@RequestMapping("/voucher-order")
 public class VoucherOrderController {
     @Autowired
     private VoucherOrderService voucherOrderService;

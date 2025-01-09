@@ -33,7 +33,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(loginInterceptor)
                 .excludePathPatterns(
                         "/user/code",
-                        "/user/login"
+                        "/user/login",
+                        "/shop/**",
+                        "/voucher/**",
+                        "/shop-type/**",
+                        "/upload/**",
+                        "/blog/hot",
+                        "/doc.html",
+                        "/webjars/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html",
+                        "/favicon.ico"
                 )
                 .order(1);
     }

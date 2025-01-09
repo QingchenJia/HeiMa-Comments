@@ -37,7 +37,7 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: edu.qingchenjia.heima_comments.controller
+      packages-to-scan: edu.qingchenjia.heimacomments.controller
 knife4j:
   enable: true
   setting:
