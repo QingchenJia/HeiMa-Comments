@@ -1,5 +1,6 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -7,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.dto.LoginFormDto;
+import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.entity.User;
 import edu.qingchenjia.heimacomments.mapper.UserMapper;
 import edu.qingchenjia.heimacomments.service.UserService;
@@ -84,8 +86,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 如果用户不存在，则创建新用户
         dbUser = dbUser == null ? insertUser(phone) : dbUser;
 
+        // 将用户信息封装到UserDto对象中
+        UserDto userDto = new UserDto();
+        BeanUtil.copyProperties(dbUser, userDto);
+
         // 将用户信息存入会话
-        request.getSession().setAttribute("user", dbUser.getId());
+        request.getSession().setAttribute("user", userDto);
 
         // 返回登录成功
         return R.ok();
