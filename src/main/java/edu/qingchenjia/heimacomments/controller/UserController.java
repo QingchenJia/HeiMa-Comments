@@ -3,7 +3,6 @@ package edu.qingchenjia.heimacomments.controller;
 import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.dto.LoginFormDto;
 import edu.qingchenjia.heimacomments.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +16,7 @@ public class UserController {
      * 发送验证码接口
      * 当用户请求发送验证码时，此方法会被调用
      *
-     * @param phone   用户输入的手机号码，用于接收验证码
+     * @param phone 用户输入的手机号码，用于接收验证码
      * @return 返回一个R对象，通常包含发送验证码操作的结果状态
      */
     @PostMapping("/code")
