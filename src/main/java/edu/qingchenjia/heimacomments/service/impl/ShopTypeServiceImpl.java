@@ -1,7 +1,6 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -27,29 +26,29 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         // 构造Redis缓存的键
         String key = Constant.REDIS_CACHE_SHOPTYPE_KEY + "all";
 
-        // 从Redis中获取缓存的店铺类型信息
-        String jsonShopTypes = stringRedisTemplate.opsForValue().get(key);
-        // 如果缓存存在且不为空，则直接返回缓存的店铺类型信息
-        if (StrUtil.isNotBlank(jsonShopTypes)) {
-            List<ShopType> cacheShopTypes = JSONUtil.toBean(jsonShopTypes, List.class);
+        // 检查Redis缓存中是否存在该键
+        if (BooleanUtil.isTrue(stringRedisTemplate.hasKey(key))) {
+            // 如果缓存存在，则直接从缓存中获取店铺类型信息
+            String jsonShopTypes = stringRedisTemplate.opsForValue().get(key);
+            // 将JSON字符串转换为List<ShopType>对象
+            List<ShopType> cacheShopTypes = JSONUtil.toList(jsonShopTypes, ShopType.class);
+            // 返回查询到的店铺类型信息
             return R.ok(cacheShopTypes);
         }
 
         // 如果缓存不存在，则从数据库中查询店铺类型信息
         LambdaQueryWrapper<ShopType> queryWrapper = new LambdaQueryWrapper<>();
+        // 按照排序字段升序排列
         queryWrapper.orderByAsc(ShopType::getSort);
 
-        List<ShopType> shopTypes = list(queryWrapper);
-        // 如果查询结果为空，则返回错误信息
-        if (CollUtil.isEmpty(shopTypes)) {
-            return R.fail("店铺类型不存在");
-        }
+        // 执行查询
+        List<ShopType> dbShopTypes = list(queryWrapper);
 
         // 将查询到的店铺类型信息转换为JSON字符串
-        JSONUtil.toJsonStr(shopTypes);
+        JSONUtil.toJsonStr(dbShopTypes);
         // 将查询到的店铺类型信息存入Redis缓存，并设置过期时间
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(shopTypes), Constant.REDIS_CACHE_SHOPTYPE_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dbShopTypes), Constant.REDIS_CACHE_SHOPTYPE_TTL, TimeUnit.MINUTES);
         // 返回查询到的店铺类型信息
-        return R.ok(shopTypes);
+        return R.ok(dbShopTypes);
     }
 }
