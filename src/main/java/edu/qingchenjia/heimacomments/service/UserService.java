@@ -7,9 +7,9 @@ import edu.qingchenjia.heimacomments.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface UserService extends IService<User> {
-    R sendCode(HttpServletRequest request, String phone);
+    R sendCode(String phone);
 
-    R login(HttpServletRequest request, LoginFormDto loginFormDto);
+    R login(LoginFormDto loginFormDto);
 
     User insertUser(String phone);
 }

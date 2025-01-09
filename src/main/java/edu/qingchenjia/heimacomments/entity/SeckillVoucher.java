@@ -1,5 +1,6 @@
 package edu.qingchenjia.heimacomments.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.io.Serial;
@@ -11,6 +12,7 @@ public class SeckillVoucher implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @TableId
     private Long voucherId;
 
     private Integer stock;
