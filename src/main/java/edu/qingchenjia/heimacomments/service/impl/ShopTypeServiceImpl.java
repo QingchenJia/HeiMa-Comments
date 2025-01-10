@@ -24,7 +24,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
     private StringRedisTemplate stringRedisTemplate;
 
     @Override
-    public R selectList() {
+    public R<List<ShopType>> selectList() {
         // 构造Redis缓存的键
         String key = Constant.REDIS_CACHE_SHOPTYPE_KEY + "all";
 

@@ -19,7 +19,7 @@ public class ShopController {
      * @return 返回查询结果，包括店铺详细信息
      */
     @GetMapping("/{id}")
-    public R queryOne(@PathVariable("id") Long id) {
+    public R<Shop> queryOne(@PathVariable("id") Long id) {
         return shopService.queryById(id);
     }
 
@@ -33,7 +33,7 @@ public class ShopController {
      * @return 返回更新结果，通常是一个表示操作结果的响应对象
      */
     @PostMapping("/update")
-    public R update(@RequestBody Shop shop) {
+    public <T> R<T> update(@RequestBody Shop shop) {
         return shopService.updateShop(shop);
     }
 }

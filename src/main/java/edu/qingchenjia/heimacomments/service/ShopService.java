@@ -5,7 +5,7 @@ import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.entity.Shop;
 
 public interface ShopService extends IService<Shop> {
-    R queryById(Long id);
+    R<Shop> queryById(Long id);
 
-    R updateShop(Shop shop);
+    <T> R<T> updateShop(Shop shop);
 }

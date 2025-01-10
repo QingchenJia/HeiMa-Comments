@@ -31,7 +31,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      * @return 返回查询结果，包括店铺信息
      */
     @Override
-    public R queryById(Long id) {
+    public R<Shop> queryById(Long id) {
         // 构造Redis缓存的键
         String key = Constant.REDIS_CACHE_SHOP_KEY + id;
 
@@ -74,7 +74,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      */
     @Override
     @Transactional
-    public R updateShop(Shop shop) {
+    public <T> R<T> updateShop(Shop shop) {
         // 检查店铺ID是否为空，如果为空则返回失败响应，提示店铺ID不能为空
         if (ObjectUtil.isEmpty(shop.getId())) {
             return R.fail("店铺ID不能为空");

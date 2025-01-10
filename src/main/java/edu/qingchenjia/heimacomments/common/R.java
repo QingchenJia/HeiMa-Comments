@@ -2,15 +2,13 @@ package edu.qingchenjia.heimacomments.common;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class R {
+public class R<T> {
     private Boolean success;
 
     private String errorMsg;
 
-    private Object data;
+    private T data;
 
     private Long total;
 
@@ -22,8 +20,8 @@ public class R {
      *
      * @return R 成功响应对象
      */
-    public static R ok() {
-        R r = new R();
+    public static <T> R<T> ok() {
+        R<T> r = new R<>();
         r.success = true;
         return r;
     }
@@ -36,9 +34,9 @@ public class R {
      * @param data 响应中携带的数据，可以是任意类型
      * @return 返回一个包含指定数据的成功响应对象
      */
-    public static R ok(Object data) {
+    public static <T> R<T> ok(T data) {
         // 创建一个新的响应对象实例
-        R r = new R();
+        R<T> r = new R<>();
         // 将方法参数中的数据赋值给响应对象的data字段
         r.data = data;
         // 返回构建好的响应对象
@@ -53,8 +51,8 @@ public class R {
      * @param total 总记录数，用于分页统计
      * @return 返回一个填充了数据和总记录数的R对象
      */
-    public static R ok(List<?> data, Long total) {
-        R r = new R();
+    public static <T> R<T> ok(T data, Long total) {
+        R<T> r = new R<>();
         r.data = data;
         r.total = total;
         return r;
@@ -66,8 +64,8 @@ public class R {
      * @param errorMsg 错误信息，用于描述失败的原因
      * @return 返回一个包含错误信息的R对象，表示失败的响应
      */
-    public static R fail(String errorMsg) {
-        R r = new R();
+    public static <T> R<T> fail(String errorMsg) {
+        R<T> r = new R<>();
         r.errorMsg = errorMsg;
         return r;
     }
