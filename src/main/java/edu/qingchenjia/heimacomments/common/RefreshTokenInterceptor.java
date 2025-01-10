@@ -1,6 +1,7 @@
 package edu.qingchenjia.heimacomments.common;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import edu.qingchenjia.heimacomments.dto.UserDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,13 +38,17 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 从Redis中获取与令牌关联的用户信息
-        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(Constant.REDIS_LOGIN_TOKEN_KEY + token);
+        // 构造Redis中登录令牌的键
+        String key = Constant.REDIS_LOGIN_TOKEN_KEY + token;
 
-        // 如果用户信息为空，则直接放行
-        if (userMap.isEmpty()) {
+        // 检查Redis中是否存在该登录令牌键
+        if (!BooleanUtil.isTrue(stringRedisTemplate.hasKey(key))) {
+            // 如果键不存在，返回true
             return true;
         }
+
+        // 从Redis中获取与令牌关联的用户信息
+        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
 
         // 创建一个用户DTO对象，用于存储从Redis中获取的用户信息
         UserDto userDto = new UserDto();

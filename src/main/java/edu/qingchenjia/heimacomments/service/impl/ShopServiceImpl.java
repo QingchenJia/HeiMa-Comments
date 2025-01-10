@@ -1,6 +1,7 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.qingchenjia.heimacomments.common.Constant;
@@ -47,5 +48,33 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 
         // 返回查询到的店铺信息
         return R.ok(dbShop);
+    }
+
+    /**
+     * 更新店铺信息
+     * <p>
+     * 此方法主要用于更新数据库中的店铺信息，并在更新成功后删除Redis缓存中的相应店铺信息，
+     * 以确保缓存数据与数据库数据保持一致
+     *
+     * @param shop 待更新的店铺对象，包含要更新的店铺信息
+     * @return 返回更新结果，包括成功或失败的提示信息
+     */
+    @Override
+    public R updateShop(Shop shop) {
+        // 检查店铺ID是否为空，如果为空则返回失败响应，提示店铺ID不能为空
+        if (ObjectUtil.isEmpty(shop.getId())) {
+            return R.fail("店铺ID不能为空");
+        }
+
+        // 更新数据库中的店铺信息
+        updateById(shop);
+
+        // 构造Redis缓存中的店铺键名
+        String key = Constant.REDIS_CACHE_SHOP_KEY + shop.getId();
+        // 删除Redis缓存中的店铺信息，以保证缓存数据与数据库数据一致
+        stringRedisTemplate.delete(key);
+
+        // 返回成功响应
+        return R.ok();
     }
 }
