@@ -1,5 +1,6 @@
 package edu.qingchenjia.heimacomments;
 
+import cn.hutool.core.util.StrUtil;
 import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.entity.Blog;
 import edu.qingchenjia.heimacomments.service.BlogService;
@@ -31,5 +32,11 @@ class HeiMaCommentsApplicationTests {
     void testSelectShopTypeList() {
         R r = shopTypeService.selectList();
         System.out.println(r.getData());
+    }
+
+    @Test
+    void testStrUtilIsBlank() {
+        boolean isBlank = StrUtil.isBlank("");
+        System.out.println(isBlank);
     }
 }

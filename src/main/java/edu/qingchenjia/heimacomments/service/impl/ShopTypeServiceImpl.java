@@ -1,6 +1,8 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -30,6 +32,11 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         if (BooleanUtil.isTrue(stringRedisTemplate.hasKey(key))) {
             // 如果缓存存在，则直接从缓存中获取店铺类型信息
             String jsonShopTypes = stringRedisTemplate.opsForValue().get(key);
+
+            if (StrUtil.isBlank(jsonShopTypes)) {
+                return R.ok(null);
+            }
+
             // 将JSON字符串转换为List<ShopType>对象
             List<ShopType> cacheShopTypes = JSONUtil.toList(jsonShopTypes, ShopType.class);
             // 返回查询到的店铺类型信息
@@ -43,6 +50,11 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
 
         // 执行查询
         List<ShopType> dbShopTypes = list(queryWrapper);
+
+        if (ObjectUtil.isEmpty(dbShopTypes)) {
+            stringRedisTemplate.opsForValue().set(key, Constant.REDIS_NO_DATA, Constant.REDIS_NO_DATA_TTL, TimeUnit.MINUTES);
+            return R.ok(null);
+        }
 
         // 将查询到的店铺类型信息转换为JSON字符串
         JSONUtil.toJsonStr(dbShopTypes);

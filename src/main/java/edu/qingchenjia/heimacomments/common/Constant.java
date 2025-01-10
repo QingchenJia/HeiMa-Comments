@@ -3,7 +3,9 @@ package edu.qingchenjia.heimacomments.common;
 public class Constant {
     public static final String USER_DEFAULT_NICKNAME = "user_";
 
-    public static final String REDIS_NO_DATA = null;
+    public static final String REDIS_NO_DATA = "";
+
+    public static final Long REDIS_NO_DATA_TTL = 3L;
 
     public static final String REDIS_LOGIN_CODE_KEY = "login:code:";
 

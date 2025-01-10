@@ -2,6 +2,7 @@ package edu.qingchenjia.heimacomments.service.impl;
 
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.qingchenjia.heimacomments.common.Constant;
@@ -12,6 +13,7 @@ import edu.qingchenjia.heimacomments.service.ShopService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,12 +39,23 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         if (BooleanUtil.isTrue(stringRedisTemplate.hasKey(key))) {
             // 如果缓存存在，从Redis中获取店铺信息并返回
             String jsonShop = stringRedisTemplate.opsForValue().get(key);
+
+            if (StrUtil.isBlank(jsonShop)) {
+                return R.ok(null);
+            }
+
             Shop cacheShop = JSONUtil.toBean(jsonShop, Shop.class);
             return R.ok(cacheShop);
         }
 
         // 如果缓存中不存在，从数据库中查询店铺信息
         Shop dbShop = getById(id);
+
+        if (ObjectUtil.isEmpty(dbShop)) {
+            stringRedisTemplate.opsForValue().set(key, Constant.REDIS_NO_DATA, Constant.REDIS_NO_DATA_TTL, TimeUnit.MINUTES);
+            return R.ok(null);
+        }
+
         // 将从数据库中查询到的店铺信息添加到Redis缓存中，并设置缓存过期时间
         stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dbShop), Constant.REDIS_CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
@@ -60,6 +73,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      * @return 返回更新结果，包括成功或失败的提示信息
      */
     @Override
+    @Transactional
     public R updateShop(Shop shop) {
         // 检查店铺ID是否为空，如果为空则返回失败响应，提示店铺ID不能为空
         if (ObjectUtil.isEmpty(shop.getId())) {
