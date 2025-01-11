@@ -1,6 +1,8 @@
 package edu.qingchenjia.heimacomments.common;
 
 public class Constant {
+    public static final String IMAGE_PATH = "D:\\Code-Storage\\HeiMaComments\\images\\";
+
     public static final String USER_DEFAULT_NICKNAME = "user_";
 
     public static final String REDIS_NO_DATA = "";

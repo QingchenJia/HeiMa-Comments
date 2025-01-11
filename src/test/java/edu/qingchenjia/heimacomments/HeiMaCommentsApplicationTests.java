@@ -1,5 +1,6 @@
 package edu.qingchenjia.heimacomments;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.entity.Blog;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.File;
 import java.util.List;
 
 @SpringBootTest
@@ -38,5 +40,12 @@ class HeiMaCommentsApplicationTests {
     void testStrUtilIsBlank() {
         boolean isBlank = StrUtil.isBlank("");
         System.out.println(isBlank);
+    }
+
+    @Test
+    void testFileMove() {
+        FileUtil.move(new File("D:\\Code-Storage\\HeiMaComments\\images\\1\\1"),
+                new File("D:\\Code-Storage\\HeiMaComments\\images\\2\\2"),
+                true);
     }
 }
