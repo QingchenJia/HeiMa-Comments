@@ -26,7 +26,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
     @Override
     public R<List<ShopType>> selectList() {
         // 构造Redis缓存的键
-        String key = Constant.REDIS_CACHE_SHOPTYPE_KEY + "all";
+        String key = Constant.REDIS_CACHE_SHOPTYPES_KEY + "all";
 
         // 检查Redis缓存中是否存在该键
         if (BooleanUtil.isTrue(stringRedisTemplate.hasKey(key))) {
@@ -59,8 +59,8 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         // 将查询到的店铺类型信息转换为JSON字符串
         JSONUtil.toJsonStr(dbShopTypes);
         // 将查询到的店铺类型信息存入Redis缓存，并设置过期时间
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dbShopTypes), Constant.REDIS_CACHE_SHOPTYPE_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dbShopTypes), Constant.REDIS_CACHE_SHOPTYPES_TTL, TimeUnit.MINUTES);
         // 返回查询到的店铺类型信息
-        return R.ok(dbShopTypes);
+        return R.ok(dbShopTypes, (long) dbShopTypes.size());
     }
 }

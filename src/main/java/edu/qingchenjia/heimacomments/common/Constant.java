@@ -19,9 +19,9 @@ public class Constant {
 
     public static final long REDIS_CACHE_SHOP_TTL = 15L;
 
-    public static final String REDIS_CACHE_SHOPTYPE_KEY = "cache:shopType:";
+    public static final String REDIS_CACHE_SHOPTYPES_KEY = "cache:shopTypes:";
 
-    public static final long REDIS_CACHE_SHOPTYPE_TTL = 20L;
+    public static final long REDIS_CACHE_SHOPTYPES_TTL = 20L;
 
     public static final int MAX_PAGE_SIZE = 10;
 }
