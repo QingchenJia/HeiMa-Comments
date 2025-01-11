@@ -4,6 +4,8 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.qingchenjia.heimacomments.common.Constant;
 import edu.qingchenjia.heimacomments.common.R;
@@ -15,6 +17,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -90,5 +93,51 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 
         // 返回成功响应
         return R.ok();
+    }
+
+    /**
+     * 插入新店铺信息
+     * <p>
+     * 该方法通过保存传入的Shop对象到数据库中，实现店铺信息的插入操作
+     * 使用OVERRIDE注解表明该方法重写了父类或接口的方法
+     *
+     * @param shop 要插入的新店铺实例，包含店铺的相关信息
+     * @return 返回一个封装了执行结果的R对象，包含店铺插入后的ID
+     * 使用R.ok()方法表示操作成功，并传入店铺ID作为返回值
+     */
+    @Override
+    public R<Long> insertShop(Shop shop) {
+        save(shop);
+        return R.ok(shop.getId());
+    }
+
+    /**
+     * 根据类型ID查询店铺信息
+     * <p>
+     * 此方法用于分页查询特定类型ID的店铺列表它首先创建一个分页对象和查询条件对象，
+     * 然后根据给定的类型ID查询数据库，最后返回包含店铺列表和总记录数的响应对象
+     *
+     * @param typeId 店铺类型ID，用于筛选查询结果
+     * @param page   页码，用于指定查询的页数
+     * @return 返回一个自定义响应对象R，包含店铺列表和总记录数
+     */
+    @Override
+    public R<List<Shop>> queryByType(Integer typeId, Integer page) {
+        // 创建分页对象，参数为当前页码和每页最大记录数
+        Page<Shop> shopPage = new Page<>(page, Constant.MAX_PAGE_SIZE);
+
+        // 创建Lambda查询条件对象，用于构建查询条件
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+        // 添加查询条件：类型ID等于传入的typeId
+        queryWrapper.eq(Shop::getTypeId, typeId);
+
+        // 执行分页查询
+        page(shopPage, queryWrapper);
+
+        // 获取查询结果列表
+        List<Shop> dbShops = shopPage.getRecords();
+
+        // 返回包含查询结果和总记录数的响应对象
+        return R.ok(dbShops, (long) dbShops.size());
     }
 }
