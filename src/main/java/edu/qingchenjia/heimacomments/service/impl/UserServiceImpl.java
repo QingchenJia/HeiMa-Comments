@@ -8,13 +8,17 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.qingchenjia.heimacomments.common.BaseContext;
 import edu.qingchenjia.heimacomments.common.Constant;
 import edu.qingchenjia.heimacomments.common.R;
 import edu.qingchenjia.heimacomments.dto.LoginFormDto;
 import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.entity.User;
+import edu.qingchenjia.heimacomments.entity.UserInfo;
 import edu.qingchenjia.heimacomments.mapper.UserMapper;
+import edu.qingchenjia.heimacomments.service.UserInfoService;
 import edu.qingchenjia.heimacomments.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -29,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private UserInfoService userInfoService;
 
     /**
      * 发送验证码到指定手机
@@ -41,7 +47,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 同时，验证码会被记录在日志中，以便调试和审计
      */
     @Override
-    public R sendCode(String phone) {
+    public R<String> sendCode(String phone) {
         // 验证手机号格式，如果格式不正确，返回错误提示
         if (!Validator.isMobile(phone)) {
             return R.fail("手机号格式不正确");
@@ -65,7 +71,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return R 对象，包含登录结果信息。如果登录成功，返回包含token的成功响应；如果登录失败，返回相应的错误信息。
      */
     @Override
-    public R login(LoginFormDto loginFormDto) {
+    public R<String> login(LoginFormDto loginFormDto) {
         // 获取用户输入的手机号和验证码
         String phone = loginFormDto.getPhone();
         String code = loginFormDto.getCode();
@@ -145,5 +151,55 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 返回新创建的用户
         return user;
+    }
+
+    /**
+     * 退出登录功能
+     * 通过删除Redis中的登录状态来实现用户退出登录
+     *
+     * @param request HTTP请求对象，用于获取请求头中的Token信息
+     * @return 返回一个表示操作结果的R对象，此处专注于退出登录操作的成功提示
+     */
+    @Override
+    public R<String> logout(HttpServletRequest request) {
+        // 从请求头中获取Token
+        String token = request.getHeader("authorization");
+        // 拼接Redis中登录状态的Key
+        String key = Constant.REDIS_LOGIN_TOKEN_KEY + token;
+
+        // 删除Redis中的登录状态，以实现用户退出登录
+        stringRedisTemplate.delete(key);
+
+        // 返回退出登录成功的信息
+        return R.ok("退出登录成功");
+    }
+
+    /**
+     * 获取当前用户信息
+     * <p>
+     * 该方法用于获取当前上下文中认证通过的用户信息，并以UserDto对象的形式返回
+     * 主要用于需要当前用户详细信息的场景，以便于在系统中进行用户相关的操作或展示
+     *
+     * @return R<UserDto> 返回一个包装了UserDto对象的响应，表示当前用户的信息
+     */
+    @Override
+    public R<UserDto> me() {
+        // 从上下文中获取当前用户信息，并直接返回封装了用户信息的响应对象
+        UserDto userDto = BaseContext.getCurrentUser();
+        return R.ok(userDto);
+    }
+
+    /**
+     * 根据用户ID获取用户信息
+     *
+     * @param id 用户ID，用于查询用户信息
+     * @return 返回一个Result对象，包含查询到的用户信息
+     */
+    @Override
+    public R<UserInfo> info(Long id) {
+        // 通过用户ID从数据库中获取用户信息
+        UserInfo dbUserInfo = userInfoService.getById(id);
+        // 返回查询结果，封装在Result对象中
+        return R.ok(dbUserInfo);
     }
 }

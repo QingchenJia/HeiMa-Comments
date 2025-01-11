@@ -77,7 +77,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
      */
     @Override
     @Transactional
-    public <T> R<T> updateShop(Shop shop) {
+    public R<?> updateShop(Shop shop) {
         // 检查店铺ID是否为空，如果为空则返回失败响应，提示店铺ID不能为空
         if (ObjectUtil.isEmpty(shop.getId())) {
             return R.fail("店铺ID不能为空");
@@ -138,6 +138,37 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         List<Shop> dbShops = shopPage.getRecords();
 
         // 返回包含查询结果和总记录数的响应对象
+        return R.ok(dbShops, (long) dbShops.size());
+    }
+
+    /**
+     * 根据名称查询店铺
+     *
+     * @param name 店铺名称，用于查询的关键词
+     * @param page 当前页码，用于分页查询
+     * @return 返回一个包含店铺列表的结果对象，包括店铺信息和总数
+     * <p>
+     * 此方法用于根据提供的店铺名称关键词和页码，查询并返回相应的店铺列表
+     * 它通过分页方式来限制查询结果的数量，以提高查询效率和用户体验
+     */
+    @Override
+    public R<List<Shop>> queryByName(String name, Integer page) {
+        // 初始化分页对象，用于存储分页查询的结果
+        Page<Shop> shopPage = new Page<>(page, Constant.MAX_PAGE_SIZE);
+
+        // 创建查询条件构造器，用于构建灵活的查询条件
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 根据名称查询店铺，如果名称不为空，则添加名称作为查询条件
+        queryWrapper.like(StrUtil.isNotBlank(name), Shop::getName, name);
+
+        // 执行分页查询，将查询结果存储在shopPage中
+        page(shopPage, queryWrapper);
+
+        // 获取查询结果中的店铺列表
+        List<Shop> dbShops = shopPage.getRecords();
+
+        // 返回查询结果，包括店铺列表和列表的总数量
         return R.ok(dbShops, (long) dbShops.size());
     }
 }
