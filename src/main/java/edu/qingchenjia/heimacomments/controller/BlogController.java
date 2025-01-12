@@ -78,6 +78,13 @@ public class BlogController {
         return blogService.queryBlogById(id);
     }
 
+    /**
+     * 获取喜欢列表接口
+     * 该接口用于获取特定用户喜欢的博客列表
+     *
+     * @param id 用户ID，用于指定获取哪个用户的喜欢列表
+     * @return 返回一个Result对象，其中包含用户喜欢的博客列表
+     */
     @GetMapping("/likes/{id}")
     public R<List<UserDto>> likeList(@PathVariable("id") Long id) {
         return blogService.likeList(id);
