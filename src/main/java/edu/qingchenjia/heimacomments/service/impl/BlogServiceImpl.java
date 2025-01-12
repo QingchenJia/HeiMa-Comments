@@ -213,6 +213,34 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
     }
 
     /**
+     * 获取用户博客列表
+     *
+     * @param page 页码，用于指定从哪一页开始查询
+     * @param id 用户ID，用于查询该用户下的所有博客
+     * @return 返回一个包含博客列表的响应对象
+     */
+    @Override
+    public R<List<Blog>> userBlogList(Integer page, Long id) {
+        // 创建一个博客分页对象，用于存储查询结果
+        Page<Blog> blogPage = new Page<>(page, Constant.MAX_PAGE_SIZE);
+        // 创建一个查询条件对象，用于设置查询条件
+        LambdaQueryWrapper<Blog> queryWrapper = new LambdaQueryWrapper<>();
+        // 设置查询条件为用户ID等于传入的id，以查询指定用户的所有博客
+        queryWrapper.eq(Blog::getUserId, id);
+
+        // 执行分页查询
+        page(blogPage, queryWrapper);
+
+        // 获取查询结果中的博客列表
+        List<Blog> dbBlogs = blogPage.getRecords();
+        // 遍历博客列表，扩展每个博客的信息
+        dbBlogs.forEach(this::expendBlogInfo);
+
+        // 返回包含博客列表的响应对象
+        return R.ok(dbBlogs);
+    }
+
+    /**
      * 扩展博客信息方法，主要用于为博客对象添加额外的用户信息和点赞状态
      * 此方法解释了如何从用户服务获取博客作者的详细信息，以及如何通过Redis判断当前用户是否点赞了该博客
      *

@@ -89,4 +89,10 @@ public class BlogController {
     public R<List<UserDto>> likeList(@PathVariable("id") Long id) {
         return blogService.likeList(id);
     }
+
+    @GetMapping("/of/user")
+    public R<List<Blog>> ofUser(@RequestParam("current") Integer page,
+                               @RequestParam("id") Long id) {
+        return blogService.userBlogList(page, id);
+    }
 }

@@ -20,4 +20,6 @@ public interface UserService extends IService<User> {
     R<UserDto> me();
 
     R<UserInfo> info(Long id);
+
+    R<UserDto> queryUserById(Long id);
 }

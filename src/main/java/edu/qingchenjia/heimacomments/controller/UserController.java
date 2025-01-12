@@ -76,4 +76,15 @@ public class UserController {
     public R<UserInfo> info(@PathVariable("id") Long id) {
         return userService.info(id);
     }
+
+    /**
+     * 根据用户ID查询用户信息
+     *
+     * @param id 用户ID，通过URL路径变量获取
+     * @return 返回一个用户对象，包含用户详细信息
+     */
+    @GetMapping("/{id}")
+    public R<UserDto> queryOne(@PathVariable("id") Long id) {
+        return userService.queryUserById(id);
+    }
 }

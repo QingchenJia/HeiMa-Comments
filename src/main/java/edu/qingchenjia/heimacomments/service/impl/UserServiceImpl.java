@@ -202,4 +202,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 返回查询结果，封装在Result对象中
         return R.ok(dbUserInfo);
     }
+
+    /**
+     * 根据用户ID查询用户信息
+     *
+     * @param id 用户ID，用于唯一标识数据库中的用户
+     * @return 返回一个封装了用户信息的R对象如果用户不存在，R对象将表示一个空的结果
+     */
+    @Override
+    public R<UserDto> queryUserById(Long id) {
+        // 从数据库中获取用户信息
+        User dbUser = getById(id);
+        // 将用户信息转换为DTO（数据传输对象）以供返回
+        UserDto userDto = BeanUtil.copyProperties(dbUser, UserDto.class);
+
+        // 返回一个表示操作成功并包含用户DTO的响应对象
+        return R.ok(userDto);
+    }
 }
