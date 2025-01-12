@@ -27,5 +27,9 @@ public class Constant {
 
     public static final int MAX_PAGE_SIZE = 10;
 
+    public static final int MAX_SCROLL_PAGE_SIZE = 3;
+
     public static final String REDIS_LIKE_BLOG_KEY = "like:blog:";
+
+    public static final String REDIS_FOLLOW_BLOG_KEY = "follow:blog:user:";
 }

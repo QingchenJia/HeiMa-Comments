@@ -1,13 +1,13 @@
 package edu.qingchenjia.heimacomments.controller;
 
 import edu.qingchenjia.heimacomments.common.R;
+import edu.qingchenjia.heimacomments.common.ScrollResult;
 import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.entity.Blog;
 import edu.qingchenjia.heimacomments.service.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.print.DocFlavor;
 import java.util.List;
 
 @RestController
@@ -91,8 +91,19 @@ public class BlogController {
     }
 
     @GetMapping("/of/user")
-    public R<List<Blog>> ofUser(@RequestParam("current") Integer page,
-                               @RequestParam("id") Long id) {
+    public R<List<Blog>> ofUser(@RequestParam("current") Integer page, @RequestParam("id") Long id) {
         return blogService.userBlogList(page, id);
+    }
+
+    /**
+     * 获取关注的博客列表
+     *
+     * @param max 最大博客ID，用于分页查询
+     * @param offset 偏移量，默认为0，用于分页查询
+     * @return 返回一个包含博客信息的滚动查询结果对象
+     */
+    @GetMapping("/of/follow")
+    public R<ScrollResult<Blog>> followBlogs(@RequestParam("lastId") Long max, @RequestParam(value = "offset", defaultValue = "0") Integer offset) {
+        return blogService.followBlogs(max, offset);
     }
 }

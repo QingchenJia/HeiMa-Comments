@@ -2,6 +2,7 @@ package edu.qingchenjia.heimacomments.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import edu.qingchenjia.heimacomments.common.R;
+import edu.qingchenjia.heimacomments.common.ScrollResult;
 import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.entity.Blog;
 
@@ -21,4 +22,6 @@ public interface BlogService extends IService<Blog> {
     R<List<UserDto>> likeList(Long id);
 
     R<List<Blog>> userBlogList(Integer page, Long id);
+
+    R<ScrollResult<Blog>> followBlogs(Long max, Integer offset);
 }
