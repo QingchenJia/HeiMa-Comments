@@ -1,7 +1,9 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
-import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -20,6 +22,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements BlogService {
@@ -127,21 +130,21 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
         LambdaUpdateWrapper<Blog> updateWrapper = new LambdaUpdateWrapper<>();
 
         // 检查用户是否已经点赞过该博客
-        Boolean isLiked = stringRedisTemplate.opsForSet().isMember(key, Convert.toStr(userDto.getId()));
-        if (BooleanUtil.isTrue(isLiked)) {
+        Double score = stringRedisTemplate.opsForZSet().score(key, Convert.toStr(userDto.getId()));
+        if (ObjectUtil.isNotEmpty(score)) {
             // 如果已点赞，减少点赞数
             updateWrapper.setSql("liked = liked - 1")
                     .eq(Blog::getId, id);
 
             // 从Redis集合中移除用户ID，表示取消点赞
-            stringRedisTemplate.opsForSet().remove(key, userDto.getId());
+            stringRedisTemplate.opsForZSet().remove(key, Convert.toStr(userDto.getId()));
         } else {
             // 如果未点赞，增加点赞数
             updateWrapper.setSql("liked = liked + 1")
                     .eq(Blog::getId, id);
 
             // 向Redis集合中添加用户ID，表示点赞
-            stringRedisTemplate.opsForSet().add(key, Convert.toStr(userDto.getId()));
+            stringRedisTemplate.opsForZSet().add(key, Convert.toStr(userDto.getId()), System.currentTimeMillis());
         }
 
         // 返回操作成功的响应
@@ -168,6 +171,48 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
     }
 
     /**
+     * 根据博客ID获取喜欢的用户列表
+     * 该方法主要用于获取与特定博客ID关联的喜欢用户列表，最多返回5个用户
+     *
+     * @param id 博客ID，用于标识特定的博客
+     * @return 返回一个响应对象，包含喜欢用户的列表如果列表为空，则返回空列表
+     */
+    @Override
+    public R<List<UserDto>> likeList(Long id) {
+        // 构造Redis中喜欢用户列表的键
+        String key = Constant.REDIS_LIKE_BLOG_KEY + id;
+        // 从Redis中获取最多5个喜欢该用户的人的ID
+        Set<String> topFive = stringRedisTemplate.opsForZSet().range(key, 0, 4);
+        // 如果Redis中没有喜欢该用户的记录，则直接返回空列表
+        if (CollUtil.isEmpty(topFive)) {
+            return R.ok(null);
+        }
+        // 将Set集合转换为List集合，以便后续查询使用
+        List<String> ids = topFive.stream().toList();
+
+        // 构造查询条件，用于查询用户信息
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        // 查询用户信息，确保查询结果的顺序与Redis中排序一致
+        queryWrapper.in(User::getId, ids)
+                .last("order by field(id," + StrUtil.join(",", ids) + ")");
+
+        // 执行查询，获取用户列表
+        List<User> dbUsers = userService.list(queryWrapper);
+
+        // 将查询到的用户信息转换为DTO格式，只保留需要的字段
+        List<UserDto> dbUserDtos = dbUsers.stream().map(user -> {
+            UserDto userDto = new UserDto();
+            userDto.setId(user.getId());
+            userDto.setIcon(user.getIcon());
+            userDto.setNickName(user.getNickName());
+            return userDto;
+        }).toList();
+
+        // 返回查询结果
+        return R.ok(dbUserDtos);
+    }
+
+    /**
      * 扩展博客信息方法，主要用于为博客对象添加额外的用户信息和点赞状态
      * 此方法解释了如何从用户服务获取博客作者的详细信息，以及如何通过Redis判断当前用户是否点赞了该博客
      *
@@ -184,9 +229,10 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
         UserDto userDto = BaseContext.getCurrentUser();
 
         // 构造Redis中保存博客点赞信息的键
-        String key = Constant.REDIS_LIKE_BLOG_KEY + userDto.getId();
+        String key = Constant.REDIS_LIKE_BLOG_KEY + blog.getId();
         // 检查当前博客是否被指定用户点赞过
-        Boolean isLiked = stringRedisTemplate.opsForSet().isMember(key, userDto.getId());
+        Double score = stringRedisTemplate.opsForZSet().score(key, Convert.toStr(userDto.getId()));
+        Boolean isLiked = ObjectUtil.isNotEmpty(score);
 
         // 设置博客的点赞状态
         blog.setIsLike(isLiked);

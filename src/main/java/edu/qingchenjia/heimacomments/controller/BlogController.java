@@ -1,11 +1,13 @@
 package edu.qingchenjia.heimacomments.controller;
 
 import edu.qingchenjia.heimacomments.common.R;
+import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.entity.Blog;
 import edu.qingchenjia.heimacomments.service.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.print.DocFlavor;
 import java.util.List;
 
 @RestController
@@ -74,5 +76,10 @@ public class BlogController {
     @GetMapping("/{id}")
     public R<Blog> queryOne(@PathVariable("id") Long id) {
         return blogService.queryBlogById(id);
+    }
+
+    @GetMapping("/likes/{id}")
+    public R<List<UserDto>> likeList(@PathVariable("id") Long id) {
+        return blogService.likeList(id);
     }
 }
