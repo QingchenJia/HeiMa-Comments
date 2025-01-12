@@ -188,7 +188,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
             return R.ok(null);
         }
         // 将Set集合转换为List集合，以便后续查询使用
-        List<String> ids = topFive.stream().toList();
+        List<Long> ids = topFive.stream().map(Convert::toLong).toList();
 
         // 构造查询条件，用于查询用户信息
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -216,7 +216,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
      * 获取用户博客列表
      *
      * @param page 页码，用于指定从哪一页开始查询
-     * @param id 用户ID，用于查询该用户下的所有博客
+     * @param id   用户ID，用于查询该用户下的所有博客
      * @return 返回一个包含博客列表的响应对象
      */
     @Override

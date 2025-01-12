@@ -1,9 +1,12 @@
 package edu.qingchenjia.heimacomments.controller;
 
 import edu.qingchenjia.heimacomments.common.R;
+import edu.qingchenjia.heimacomments.dto.UserDto;
 import edu.qingchenjia.heimacomments.service.FollowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/follow")
@@ -33,5 +36,19 @@ public class FollowController {
     @GetMapping("/or/not/{id}")
     public R<?> isFollow(@PathVariable("id") Long followUserId) {
         return followService.isFollow(followUserId);
+    }
+
+    /**
+     * 获取共同关注的用户列表
+     * <p>
+     * 该方法通过GET请求接收一个用户ID作为参数，然后调用服务层方法来获取当前用户与指定用户共同关注的用户列表
+     * 使用路径变量{id}来指定目标用户的ID，提高了API的灵活性和可读性
+     *
+     * @param id 目标用户的ID，用于查找共同关注的用户列表
+     * @return 返回一个列表，包含当前用户与指定用户共同关注的用户信息
+     */
+    @GetMapping("/common/{id}")
+    public R<List<UserDto>> commonFollows(@PathVariable("id") Long id) {
+        return followService.commonFollows(id);
     }
 }

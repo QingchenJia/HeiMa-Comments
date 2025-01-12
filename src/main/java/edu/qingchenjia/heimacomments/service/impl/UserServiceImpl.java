@@ -2,6 +2,7 @@ package edu.qingchenjia.heimacomments.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.RandomUtil;
@@ -114,7 +115,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 new HashMap<>(),
                 CopyOptions.create()
                         .setIgnoreNullValue(false)
-                        .setFieldValueEditor((String s, Object object) -> object.toString())
+                        .setFieldValueEditor((String fieldName, Object fieldValue) -> Convert.toStr(fieldValue))
         );
 
         // 生成唯一的token
