@@ -26,4 +26,6 @@ public class Constant {
     public static final long REDIS_CACHE_SHOPTYPES_TTL = 20L;
 
     public static final int MAX_PAGE_SIZE = 10;
+
+    public static final String REDIS_LIKE_BLOG_KEY = "like:blog:";
 }

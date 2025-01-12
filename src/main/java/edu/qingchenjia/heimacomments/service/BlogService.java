@@ -14,4 +14,6 @@ public interface BlogService extends IService<Blog> {
     R<List<Blog>> mine(Integer page);
 
     R<?> like(Long id);
+
+    R<Blog> queryBlogById(Long id);
 }

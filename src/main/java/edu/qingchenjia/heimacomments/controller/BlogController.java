@@ -64,4 +64,15 @@ public class BlogController {
     public R<?> like(@PathVariable("id") Long id) {
         return blogService.like(id);
     }
+
+    /**
+     * 根据ID查询博客详情
+     *
+     * @param id 博客的唯一标识符
+     * @return 返回一个响应对象，包含查询到的博客信息
+     */
+    @GetMapping("/{id}")
+    public R<Blog> queryOne(@PathVariable("id") Long id) {
+        return blogService.queryBlogById(id);
+    }
 }
