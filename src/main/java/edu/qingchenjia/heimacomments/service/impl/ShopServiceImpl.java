@@ -1,5 +1,7 @@
 package edu.qingchenjia.heimacomments.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -13,12 +15,19 @@ import edu.qingchenjia.heimacomments.entity.Shop;
 import edu.qingchenjia.heimacomments.mapper.ShopMapper;
 import edu.qingchenjia.heimacomments.service.ShopService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.*;
+import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements ShopService {
@@ -112,33 +121,124 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     }
 
     /**
-     * 根据类型ID查询店铺信息
-     * <p>
-     * 此方法用于分页查询特定类型ID的店铺列表它首先创建一个分页对象和查询条件对象，
-     * 然后根据给定的类型ID查询数据库，最后返回包含店铺列表和总记录数的响应对象
+     * 根据类型ID查询店铺，支持分页和地理位置排序
      *
-     * @param typeId 店铺类型ID，用于筛选查询结果
-     * @param page   页码，用于指定查询的页数
-     * @return 返回一个自定义响应对象R，包含店铺列表和总记录数
+     * @param typeId 店铺类型ID
+     * @param page 页码
+     * @param x 经度，用于地理位置排序
+     * @param y 纬度，用于地理位置排序
+     * @return 返回包含店铺列表的响应对象
      */
     @Override
-    public R<List<Shop>> queryByType(Integer typeId, Integer page) {
-        // 创建分页对象，参数为当前页码和每页最大记录数
-        Page<Shop> shopPage = new Page<>(page, Constant.MAX_PAGE_SIZE);
+    public R<List<Shop>> queryByType(Integer typeId, Integer page, Double x, Double y) {
+        // 判断是否传入经纬度，如果没有，则执行普通的分页查询
+        if (ObjectUtil.isEmpty(x) && ObjectUtil.isEmpty(y)) {
+            // 创建分页对象，参数为当前页码和每页最大记录数
+            Page<Shop> shopPage = new Page<>(page, Constant.MAX_PAGE_SIZE);
 
-        // 创建Lambda查询条件对象，用于构建查询条件
-        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
-        // 添加查询条件：类型ID等于传入的typeId
-        queryWrapper.eq(Shop::getTypeId, typeId);
+            // 创建Lambda查询条件对象，用于构建查询条件
+            LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+            // 添加查询条件：类型ID等于传入的typeId
+            queryWrapper.eq(Shop::getTypeId, typeId);
 
-        // 执行分页查询
-        page(shopPage, queryWrapper);
+            // 执行分页查询
+            page(shopPage, queryWrapper);
 
-        // 获取查询结果列表
-        List<Shop> dbShops = shopPage.getRecords();
+            // 获取查询结果列表
+            List<Shop> dbShops = shopPage.getRecords();
 
-        // 返回包含查询结果和总记录数的响应对象
-        return R.ok(dbShops, (long) dbShops.size());
+            // 返回包含查询结果和总记录数的响应对象
+            return R.ok(dbShops, (long) dbShops.size());
+        } else {
+            // 如果传入了经纬度，则根据地理位置进行查询
+            List<Shop> dbShops = list();
+            // 将店铺按类型ID分组
+            Map<Long, List<Shop>> shopsByType = dbShops.stream().collect(Collectors.groupingBy(Shop::getTypeId));
+
+            // 遍历每种类型的店铺，将它们的地理位置添加到Redis中
+            for (Map.Entry<Long, List<Shop>> entry : shopsByType.entrySet()) {
+                Long type = entry.getKey();
+                List<Shop> shops = entry.getValue();
+
+                // 创建地理位置对象列表
+                List<RedisGeoCommands.GeoLocation<String>> locations = new ArrayList<>(shops.size());
+                for (Shop shop : shops) {
+                    // 创建点对象，包含经纬度
+                    Point point = new Point(shop.getX(), shop.getY());
+                    // 创建地理位置对象，并添加到列表中
+                    locations.add(new RedisGeoCommands.GeoLocation<>(Convert.toStr(shop.getId()), point));
+                }
+
+                // 如果地理位置列表为空，则返回空响应
+                if (CollUtil.isEmpty(locations)) {
+                    return R.ok(null);
+                }
+
+                // 将地理位置信息添加到Redis中
+                stringRedisTemplate.opsForGeo()
+                        .add(Constant.REDIS_NEAR_SHOPS_KEY + type, locations);
+            }
+
+            // 构建Redis键名
+            String key = Constant.REDIS_NEAR_SHOPS_KEY + typeId;
+            // 计算Redis查询的起始和结束索引
+            Long start = Convert.toLong((page - 1) * Constant.MAX_PAGE_SIZE);
+            Long end = Convert.toLong(page * Constant.MAX_PAGE_SIZE);
+
+            // 执行地理位置查询，找出符合条件的店铺
+            GeoResults<RedisGeoCommands.GeoLocation<String>> results = stringRedisTemplate.opsForGeo()
+                    .search(key,
+                            new GeoReference.GeoCoordinateReference<>(x, y),
+                            new Distance(5, Metrics.KILOMETERS),
+                            RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
+                                    .includeDistance()
+                                    .sortAscending()
+                                    .limit(end));
+
+            // 如果查询结果为空，则返回空响应
+            if (CollUtil.isEmpty(results)) {
+                return R.ok(null);
+            }
+
+            // 从查询结果中提取当前页的店铺信息
+            List<GeoResult<RedisGeoCommands.GeoLocation<String>>> pageNearShops = results.getContent()
+                    .stream()
+                    .skip(start)
+                    .toList();
+
+            // 如果当前页的店铺信息为空，则返回空响应
+            if (CollUtil.isEmpty(pageNearShops)) {
+                return R.ok(null);
+            }
+
+            // 创建一个映射，用于存储店铺ID和其对应的距离
+            Map<String, Double> shopWithDistance = new HashMap<>(pageNearShops.size());
+            // 创建一个列表，用于存储店铺ID
+            List<Long> shopIds = new ArrayList<>(pageNearShops.size());
+            for (GeoResult<RedisGeoCommands.GeoLocation<String>> shop : pageNearShops) {
+                String shopId = shop.getContent().getName();
+                double distance = shop.getDistance().getValue();
+
+                shopWithDistance.put(shopId, distance);
+                shopIds.add(Convert.toLong(shopId));
+            }
+
+            // 创建查询条件，用于查询店铺详细信息
+            LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.in(Shop::getId, shopIds)
+                    .last("order by field(id," + StrUtil.join(",", shopIds) + ")");
+
+            // 执行查询，获取店铺详细信息
+            List<Shop> dbPageNearShops = list(queryWrapper);
+            // 将查询结果与距离映射进行关联
+            dbPageNearShops.forEach(shop -> {
+                Double distance = shopWithDistance.get(Convert.toStr(shop.getId()));
+                shop.setDistance(distance);
+            });
+
+            // 返回包含查询结果和总记录数的响应对象
+            return R.ok(dbPageNearShops, (long) dbPageNearShops.size());
+        }
     }
 
     /**

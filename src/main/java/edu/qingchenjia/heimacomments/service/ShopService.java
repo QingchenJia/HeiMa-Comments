@@ -13,7 +13,7 @@ public interface ShopService extends IService<Shop> {
 
     R<Long> insertShop(Shop shop);
 
-    R<List<Shop>> queryByType(Integer typeId, Integer page);
+    R<List<Shop>> queryByType(Integer typeId, Integer page,Double x, Double y);
 
     R<List<Shop>> queryByName(String name, Integer page);
 }

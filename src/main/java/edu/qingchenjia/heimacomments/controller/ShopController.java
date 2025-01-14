@@ -61,8 +61,8 @@ public class ShopController {
      * @return 返回一个结果对象，包含根据类型筛选并分页查询到的店铺列表
      */
     @GetMapping("/of/type")
-    public R<List<Shop>> queryByType(@RequestParam("typeId") Integer typeId, @RequestParam(value = "current", defaultValue = "1") Integer page) {
-        return shopService.queryByType(typeId, page);
+    public R<List<Shop>> queryByType(@RequestParam("typeId") Integer typeId, @RequestParam(value = "current", defaultValue = "1") Integer page, @RequestParam(value = "x", required = false) Double x, @RequestParam(value = "y", required = false) Double y) {
+        return shopService.queryByType(typeId, page, x, y);
     }
 
     /**

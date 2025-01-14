@@ -23,6 +23,14 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * 选择店铺类型列表
+     * <p>
+     * 本方法首先尝试从Redis缓存中获取店铺类型列表如果缓存中不存在数据，
+     * 则从数据库中查询，并将结果缓存到Redis中以提高下次查询的效率
+     *
+     * @return 返回包含店铺类型列表的响应对象如果没有数据，返回空列表或null
+     */
     @Override
     public R<List<ShopType>> selectList() {
         // 构造Redis缓存的键
@@ -33,6 +41,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
             // 如果缓存存在，则直接从缓存中获取店铺类型信息
             String jsonShopTypes = stringRedisTemplate.opsForValue().get(key);
 
+            // 检查缓存数据是否为空
             if (StrUtil.isBlank(jsonShopTypes)) {
                 return R.ok(null);
             }
@@ -51,7 +60,9 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         // 执行查询
         List<ShopType> dbShopTypes = list(queryWrapper);
 
+        // 检查查询结果是否为空
         if (ObjectUtil.isEmpty(dbShopTypes)) {
+            // 如果数据库中没有数据，将此信息缓存到Redis中，避免缓存穿透
             stringRedisTemplate.opsForValue().set(key, Constant.REDIS_NO_DATA, Constant.REDIS_NO_DATA_TTL, TimeUnit.MINUTES);
             return R.ok(null);
         }
