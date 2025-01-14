@@ -2,9 +2,12 @@ package edu.qingchenjia.heimacomments.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.lang.Validator;
+import cn.hutool.core.util.CharUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -22,12 +25,14 @@ import edu.qingchenjia.heimacomments.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -247,5 +252,63 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 返回成功响应
         return R.ok();
+    }
+
+    /**
+     * 获取用户的签到计数
+     * <p>
+     * 此方法通过Redis中的位操作来获取当前用户本月的签到次数
+     * 它首先构造了一个唯一的Redis键，然后使用bitField命令获取特定日期的签到信息
+     * 最后，它计算连续签到的天数，并返回给调用者
+     *
+     * @return 返回一个包装了签到天数的响应对象
+     */
+    @Override
+    public R<Integer> signCount() {
+        // 获取当前用户信息
+        UserDto userDto = BaseContext.getCurrentUser();
+        // 生成Redis键的后缀部分，格式为yyyyMM
+        String keySuffix = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMM"));
+        // 构造Redis键，包含用户ID和日期后缀
+        String key = Constant.REDIS_SIGN_USER_KEY + userDto.getId() + ":" + keySuffix;
+
+        // 使用Redis的bitField命令获取当前月的签到信息
+        List<Long> result = stringRedisTemplate.opsForValue()
+                .bitField(key,
+                        BitFieldSubCommands.create()
+                                .get(BitFieldSubCommands.BitFieldType
+                                        .unsigned(LocalDateTime.now().getDayOfMonth()))
+                                .valueAt(0));
+
+        // 如果结果为空，表示没有签到记录，返回0
+        if (CollUtil.isEmpty(result)) {
+            return R.ok(0);
+        }
+
+        // 获取签到位图中的签到信息
+        Long signBit = result.getFirst();
+
+        // 如果签到信息为空或为0，表示没有签到，返回0
+        if (ObjectUtil.isEmpty(signBit) || signBit == 0L) {
+            return R.ok(0);
+        }
+
+        // 将签到信息转换为二进制字符串，并反转以便从低位到高位遍历
+        char[] bitArray = StrUtil.reverse(Long.toBinaryString(signBit)).toCharArray();
+        int count = 0;
+        // 遍历二进制字符串，计算连续签到的天数
+        for (char ch : bitArray) {
+            // 如果当前位为1，则累加计数器
+            if (CharUtil.equals('1', ch, false)) {
+                count++;
+            } else {
+                // 如果当前位不为1，表示签到中断，跳出循环
+                break;
+            }
+        }
+
+        // 返回连续签到的天数
+        return R.ok(count);
     }
 }

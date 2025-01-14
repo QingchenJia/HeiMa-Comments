@@ -24,4 +24,6 @@ public interface UserService extends IService<User> {
     R<UserDto> queryUserById(Long id);
 
     R<?> sign();
+
+    R<Integer> signCount();
 }
