@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -219,5 +221,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 返回一个表示操作成功并包含用户DTO的响应对象
         return R.ok(userDto);
+    }
+
+    /**
+     * 签名方法
+     * <p>
+     * 该方法用于处理用户签名操作它根据当前用户和当前日期，
+     * 在Redis中存储签名信息，以实现每日一签的功能
+     *
+     * @return 返回签名结果，通常是一个表示成功或失败的响应对象
+     */
+    @Override
+    public R<?> sign() {
+        // 获取当前用户信息
+        UserDto userDto = BaseContext.getCurrentUser();
+        // 生成Redis键的后缀部分，格式为yyyyMM
+        String keySuffix = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMM"));
+        // 构造Redis键，包含用户ID和日期后缀
+        String key = Constant.REDIS_SIGN_USER_KEY + userDto.getId() + ":" + keySuffix;
+
+        // 在Redis中设置签名信息，使用当前日期的天作为位索引，表示该天已签名
+        stringRedisTemplate.opsForValue()
+                .setBit(key, LocalDateTime.now().getDayOfMonth() - 1, true);
+
+        // 返回成功响应
+        return R.ok();
     }
 }

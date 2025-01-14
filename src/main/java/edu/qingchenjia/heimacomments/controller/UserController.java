@@ -87,4 +87,17 @@ public class UserController {
     public R<UserDto> queryOne(@PathVariable("id") Long id) {
         return userService.queryUserById(id);
     }
+
+    /**
+     * 处理用户签到请求
+     * <p>
+     * 该方法通过POST请求处理用户的签到操作它没有接收任何参数，
+     * 并且返回一个响应对象，表示签到的结果
+     *
+     * @return 返回一个响应对象，包含签到操作的结果信息
+     */
+    @PostMapping("/sign")
+    public R<?> sign() {
+        return userService.sign();
+    }
 }

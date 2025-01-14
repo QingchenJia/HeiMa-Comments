@@ -34,4 +34,6 @@ public class Constant {
     public static final String REDIS_FOLLOW_BLOG_KEY = "follow:blog:user:";
 
     public static final String REDIS_NEAR_SHOPS_KEY = "near:shop:type:";
+
+    public static final String REDIS_SIGN_USER_KEY = "sign:user:";
 }
